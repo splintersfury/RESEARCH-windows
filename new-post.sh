@@ -21,15 +21,24 @@ SLUG="$(printf '%s' "$TITLE" \
   | tr '[:upper:]' '[:lower:]' \
   | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
 
+if [ -z "$SLUG" ]; then echo "Title produces an empty slug; use at least one letter or digit." >&2; exit 1; fi
+
 OUT="$ROOT/_posts/${DATE_YMD}-${SLUG}.md"
 [ -e "$OUT" ] && { echo "Refusing to overwrite existing file: $OUT" >&2; exit 1; }
 
 mkdir -p "$ROOT/_posts"
 
+# escape chars special on the right-hand side of sed s|||  : backslash, the | delimiter, and &
+esc() { printf '%s' "$1" | sed -e 's/[\\|&]/\\&/g'; }
+
+TITLE_ESC="$(esc "$TITLE")"
+SOURCE_ESC="$(esc "$SOURCE")"
+DATE_ESC="$(esc "$DATE_FULL")"
+
 sed \
-  -e "s|TITLE_PLACEHOLDER|${TITLE}|g" \
-  -e "s|DATE_PLACEHOLDER|${DATE_FULL}|g" \
-  -e "s|SOURCE_PLACEHOLDER|${SOURCE}|g" \
+  -e "s|TITLE_PLACEHOLDER|${TITLE_ESC}|g" \
+  -e "s|DATE_PLACEHOLDER|${DATE_ESC}|g" \
+  -e "s|SOURCE_PLACEHOLDER|${SOURCE_ESC}|g" \
   "$TEMPLATE" > "$OUT"
 
 echo "Created: $OUT"
