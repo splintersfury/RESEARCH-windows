@@ -209,6 +209,9 @@ exclude:
   - "*.gem"
   - "*.gemspec"
   - docs
+  - templates
+  - new-post.sh
+  - excalidraw.log
   - tools
   - README.md
   - LICENSE
