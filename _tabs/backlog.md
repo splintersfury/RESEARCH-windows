@@ -10,8 +10,15 @@ each post. Check items off as you write them up.
 
 ## To explore
 
-- [ ] _(example)_ Windows object headers — surfaced while reading the welcome post
+_From "Arbitrary Directory Creation to Arbitrary File Read" (Forshaw, PØ 2017):_
+
+- [ ] `OBJ_FORCE_ACCESS_CHECK` and the `Nt*` vs `Zw*` access-check boundary — minimal repro
+- [ ] NTFS reparse points in depth — mount points vs junctions vs symlinks vs `$REPARSE_POINT`
+- [ ] Forshaw's symbolic-link toolkit / the broader PØ symlink-attack series
+- [ ] `NtGetNlsSectionPtr` and the `\NLS` object directory — other syscalls with sloppy open flags?
+- [ ] The confused-deputy pattern on Windows — build a reusable catalogue of examples
+- [ ] Modern mitigations — RedirectionTrust / redirection guards and post-2017 reparse hardening
 
 ## Done
 
-- [x] _(example)_ Set up this blog
+- [x] Set up this blog
