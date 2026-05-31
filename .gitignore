@@ -5,3 +5,15 @@ _site/
 vendor/
 .bundle/
 Gemfile.lock
+
+# From Chirpy starter
+*.gem
+node_modules
+package-lock.json
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+_sass/vendors
+assets/js/dist
