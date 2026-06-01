@@ -126,16 +126,16 @@ Last post I said `NtGetNlsSectionPtr` is still good because Redirection Guard is
 
 So it's a real, well-built mitigation. Just narrower than the headline, and the code just says it.
 
-## Prior work, and two small corrections
+## Prior work
 
-I'm not the first here. The reverse-engineering groundwork is [Gal De Leon's 2022 Unit 42 writeup](https://unit42.paloaltonetworks.com/junctions-windows-redirection-trust-mitigation/), which got the core decision functions and the opt-in policy. It's static only and reflects the 2022 picture, back when this ran in audit mode on a handful of services. The [MSRC post](https://msrc.microsoft.com/blog/2025/06/redirectionguard-mitigating-unsafe-junction-traversal-in-windows) is the official one. Both are worth reading.
+I'm not the first here. The groundwork is [Gal De Leon's 2022 Unit 42 writeup](https://unit42.paloaltonetworks.com/junctions-windows-redirection-trust-mitigation/), which reversed the core decision functions and the opt-in policy, and the [MSRC post](https://msrc.microsoft.com/blog/2025/06/redirectionguard-mitigating-unsafe-junction-traversal-in-windows) is the official one. Both worth reading.
 
-What this post adds on top: the exact `ntfs.sys` call sites by name (`NtfsSetReparsePointInternal` on create, `NtfsGetReparsePointValue` on follow), a live breakpoint confirming the follow path plus its arguments, the precise impersonation rule (`enforce && client_token_enforce`), and the current enforce-mode coverage.
+What this one adds is detail on a current build: the exact `ntfs.sys` call sites (`NtfsSetReparsePointInternal` on create, `NtfsGetReparsePointValue` on follow), a live breakpoint confirming the follow path and its arguments, the impersonation rule (`enforce && client_token_enforce`), and where coverage sits now.
 
-Checking the old writeup against a 2025 build, two small things fell out:
+Two specifics I wanted nailed down, since they're easy to get fuzzy:
 
-- **Where the trust is stored.** De Leon says the junction FCB's standard information, and that's right. The create path writes the byte to the FCB at offset 37, then calls `NtfsUpdateStandardInformation`, so it persists into the file's `$STANDARD_INFORMATION`. A few secondary posts repeat that it sits in an admin-only alternate data stream. That one is wrong.
-- **The block status code.** The 2022 writeup cites `0xC00004BE`. On a current build the block is `0xC00004BC` ("the path cannot be traversed because it contains an untrusted mount point"), which is also exactly what the function returns in the decompile. `0xC00004BE` is a different, unrelated status ("the request cannot be completed as it requires modifying an immutable object"). Looks like an off-by-one-nibble typo.
+- **Where the trust lives.** Create writes the byte to the FCB at offset 37, then `NtfsUpdateStandardInformation` persists it into the file's `$STANDARD_INFORMATION`.
+- **The block status code.** `0xC00004BC`, "the path cannot be traversed because it contains an untrusted mount point" — the same value the function returns in the decompile.
 
 ## Stuff I took away
 
