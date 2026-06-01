@@ -135,7 +135,7 @@ What this one adds is detail on a current build: the exact `ntfs.sys` call sites
 Two specifics I wanted nailed down, since they're easy to get fuzzy:
 
 - **Where the trust lives.** Create writes the byte to the FCB at offset 37, then `NtfsUpdateStandardInformation` persists it into the file's `$STANDARD_INFORMATION`.
-- **The block status code.** `0xC00004BC`, "the path cannot be traversed because it contains an untrusted mount point" — the same value the function returns in the decompile.
+- **The block status code.** `0xC00004BC`, "the path cannot be traversed because it contains an untrusted mount point". The same value the function returns in the decompile.
 
 ## Stuff I took away
 
