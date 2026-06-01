@@ -13,7 +13,7 @@ source: "https://msrc.microsoft.com/blog/2025/06/redirectionguard-mitigating-uns
 - Redirection Guard brands a reparse point the moment it's created. Trust `2` if an admin made it, `1` if not. That byte gets written into the file record.
 - When something later follows that reparse, NTFS reads the brand back and checks it against the **following** process's mitigation policy. Brand `1` plus a follower with Enforce turned on means blocked, `STATUS 0xC00004BC` ("the path cannot be traversed because it contains an untrusted mount point").
 - The decision lives in `nt` (`IoComputeRedirectionTrustLevel`, `IoCheckRedirectionTrustLevel`). NTFS calls it from two spots: `NtfsSetReparsePointInternal` when you make a reparse, `NtfsGetReparsePointValue` when you follow one.
-- The whole thing keys on the **follower**, not on whoever made the junction. Which is the entire reason the `NtGetNlsSectionPtr` trick from last post still works. There the follower is the attacker's own process, and it never opted in.
+- The whole thing keys on the **follower**, not on whoever made the junction. So it would not have stopped the `NtGetNlsSectionPtr` self-call from last post (the follower there is the attacker's own non-enforce process). That's moot, though: that trick was already killed years earlier by a different fix, mount points can no longer be followed to a file. See the correction in the [Forshaw post]({% post_url 2026-05-31-windows-exploitation-tricks-arbitrary-directory-creation-to-arbitrary-file-read %}).
 
 I read this out of `ntoskrnl` and `ntfs.sys` first, then put a breakpoint on it on a live box to check. They matched.
 
@@ -122,7 +122,7 @@ r9  (a4) = 2   ; stored trust level      -> admin-created -> (2 & ~2)==0 -> ALLO
 
 ## What this means for the old trick
 
-Last post I said `NtGetNlsSectionPtr` is still good because Redirection Guard is opt-in. Reading the code makes that a lot less hand-wavy. The check looks at the **follower's** token, that's it. In the self-call case the follower is the attacker's own process with no Enforce bit, so even a junction the attacker made (`trust = 1`) gets followed, no complaint. Redirection Guard covers the "trick a protected service into walking my junction" shape, and only for the services that turned it on. A syscall you drive in your own process? It does nothing.
+Redirection Guard keys on the follower's token, full stop. In the `NtGetNlsSectionPtr` self-call the follower is the attacker's own process with no Enforce bit, so Redirection Guard would not have blocked it. I leaned on exactly that in the last post to argue the trick still works. It doesn't. That technique was already dead, killed back in 2018 by a separate fix that stops a mount point from being followed to a file, which I correct in the [Forshaw post]({% post_url 2026-05-31-windows-exploitation-tricks-arbitrary-directory-creation-to-arbitrary-file-read %}). Two different mitigations, and only the older one is what actually closed `NtGetNlsSectionPtr`. Redirection Guard covers a different shape: tricking a protected service into walking your junction, and only for the services that turned it on.
 
 So it's a real, well-built mitigation. Just narrower than the headline, and the code just says it.
 
